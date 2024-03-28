@@ -9,13 +9,13 @@ jobs:
       matrix:
         arch: [ x86_64, aarch64 ]
         os: [ windows, macos, ubuntu-20.04, ubuntu-22.04 ]
-        version: [ 14.0.6, 16.0.6 ]
+        version: [ 17.0.6, 18.1.2 ]
 
         include:
-          - version: 14.0.6
-            branch: release/14.x
+          - version: 17.0.6
+            branch: release/17.x
           - version: 16.0.6
-            branch: release/16.x
+            branch: release/18.x
 
           - os: windows
             runner: windows-2022
@@ -76,29 +76,29 @@ jobs:
           sudo cp -R ./usr/lib/aarch64-linux-gnu/ /usr/lib/aarch64-linux-gnu
 
       - name: Clone project
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: llvm-prebuilt
 
       - name: Clone LLVM ${{matrix.version}}
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: llvm/llvm-project
           ref: ${{matrix.branch}}
           path: llvm-project
 
-      - name: Patch LLVM
-        shell: pwsh
-        run: |
-          if ('${{matrix.version}}' -eq '14.0.6') {
-            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-14-add-lld-install-targets.patch
-            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-14-add-llvm-name-prefix-to-llc-lli-opt-tools.patch
-            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-14-force-disable-clang-ast-introspection.patch
-          } else {
-            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-16-add-lld-install-targets.patch
-            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-16-add-llvm-name-prefix-to-llc-lli-opt-tools.patch
-            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-16-force-disable-clang-ast-introspection.patch
-          }
+#      - name: Patch LLVM
+#        shell: pwsh
+#        run: |
+#          if ('${{matrix.version}}' -eq '17.0.6') {
+#            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-14-add-lld-install-targets.patch
+#            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-14-add-llvm-name-prefix-to-llc-lli-opt-tools.patch
+#            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-14-force-disable-clang-ast-introspection.patch
+#          } else {
+#            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-16-add-lld-install-targets.patch
+#            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-16-add-llvm-name-prefix-to-llc-lli-opt-tools.patch
+#            git -C llvm-project apply ../llvm-prebuilt/patches/llvm-16-force-disable-clang-ast-introspection.patch
+#          }
 
       - name: Enable Windows host environment
         if: runner.os == 'Windows'
@@ -145,7 +145,7 @@ jobs:
 
           if ('${{matrix.os}}' -eq 'macos') {
             $AppleArch = @{'x86_64'='x86_64';'aarch64'='arm64'}['${{matrix.arch}}']
-            $CMakeArgs += @("-DCMAKE_OSX_ARCHITECTURES=`"$AppleArch`"")
+            $CMakeArgs += @("-DCMAKE_BUILD_TYPE='Release' -DCMAKE_OSX_ARCHITECTURES=`"$AppleArch`"")
           }
 
           cmake -G Ninja -S llvm-project/llvm -B llvm-build $CMakeArgs `
